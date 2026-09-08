@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.env
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.tsbuildinfo
+apps/*/generated/
+apps/*/public/uploads/*
+!apps/*/public/uploads/.gitkeep
+test-results/
+playwright-report/

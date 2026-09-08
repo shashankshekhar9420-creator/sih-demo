@@ -1,0 +1,399 @@
+# Sahaj Project: Coding Agent Handoff
+
+**Workspace:** `D:\sih-demo`  
+**Status:** Substantial source code exists for both apps, but the project is **not yet verified to build or run**. Artisan Studio has an incomplete styling layer, and dependency installation failed.
+
+This handoff is provided inline. No document was written to disk because the current session is read-only.
+
+## 1. Source Of Truth
+
+Read the complete specification before continuing:
+
+`C:\Users\Shashank\Downloads\artisan-marketplace-dev-spec.md`
+
+The specification overrides earlier discussions and implementation assumptions.
+
+Key locked decisions:
+
+- Two separate Next.js App Router web apps, not native mobile apps.
+- Commerce runs on `http://localhost:3000`.
+- Artisan Studio runs on `http://localhost:4000`.
+- Separate SQLite databases through Prisma.
+- Zod validation on mutations and API boundaries.
+- Local filesystem storage.
+- Exactly three product images and three voice recordings per catalog.
+- Eleven fixed, flat categories.
+- AI features use deterministic stubs behind real API contracts.
+- No cart, real payments, cloud services, real registration, or production authentication.
+
+The user also supplied a visual reference:
+
+`C:\Users\Shashank\Downloads\WhatsApp Image 2026-09-06 at 13.24.40.jpeg`
+
+The previous agent could not view this image. **Do not claim that the implementation matches it.** Inspect it if your environment supports image input; otherwise follow the warm-neutral, accessible design direction in the specification.
+
+## 2. Current Workspace
+
+```text
+D:\sih-demo\
+  package.json
+  .gitignore
+  packages\
+    shared\
+      package.json
+      index.ts
+  apps\
+    commerce\
+      app\
+      components\
+      lib\
+      prisma\
+      public\art\
+      tests\
+      README.md
+      .env.example
+      package.json
+      ...
+    artisan\
+      app\
+      components\
+      lib\
+      prisma\
+      public\uploads\
+      .env.example
+      package.json
+      ...
+```
+
+At the handoff audit:
+
+- Node: `v24.14.1`
+- npm: `11.11.0`
+- No successful dependency installation.
+- No `package-lock.json`.
+- No generated Prisma clients.
+- No initialized SQLite databases.
+- No successful Next.js builds.
+- Project files are untracked; no commits have been made.
+
+Preserve the existing implementation. Do not scaffold over it or assume the Artisan frontend is empty.
+
+## 3. Work Implemented
+
+**“Implemented” below means source files exist, not that runtime behavior has been verified.**
+
+### Shared Workspace
+
+- npm workspaces for both apps and `@sahaj/shared`.
+- Root scripts for development, database setup, seeding, builds, and production startup.
+- Shared category definitions, Hindi voice questions, Zod schemas, formatting helpers, and integration contracts.
+- Separate app-local Prisma client output directories to avoid client-generation conflicts.
+
+Important file:
+
+`packages/shared/index.ts`
+
+### Commerce App
+
+Source includes:
+
+- Editorial marketplace homepage with search, category filtering, and sorting.
+- Product cards, detail pages, galleries, and Hindi content toggle.
+- Direct Buy Now form.
+- Transactional stock decrement and dummy `PAID` order creation.
+- Order confirmation pages using private receipt tokens.
+- Signed HTTP-only demo seller session.
+- Protected seller dashboard, product management, and order management.
+- Seller-scoped authorization checks.
+- All specified commerce API routes.
+- Idempotent artisan publish/update with stable listing IDs and slugs.
+- Server-side API-key validation.
+- Seed script containing three sellers, eight products, and four example orders.
+- Nine local SVG artwork assets.
+- Commerce documentation and tests.
+
+Read these first:
+
+```text
+apps/commerce/README.md
+apps/commerce/lib/publish.ts
+apps/commerce/lib/orders.ts
+apps/commerce/lib/auth.ts
+apps/commerce/prisma/schema.prisma
+apps/commerce/tests/commerce.test.ts
+```
+
+The seed uses fixed IDs and preserves existing rows on repeat runs. It is not a reset script.
+
+### Artisan Backend
+
+Source includes:
+
+- Prisma `Catalog` model and parsed, client-safe catalog DTO.
+- Draft creation, listing, retrieval, and editing.
+- Exactly-three image upload and replacement.
+- JPEG/PNG MIME, size, and basic signature validation.
+- Image processing stub that copies original image bytes.
+- Exactly-three audio upload with type and size validation.
+- Fixed placeholder transcription/translation.
+- Deterministic bilingual catalog generation.
+- Pricing recommendation using `materialCost × 2`.
+- Workflow prerequisite checks and database-backed mutation locks.
+- Server-to-server commerce publishing.
+- Persisted publish errors, editable `FAILED` catalogs, and retry support.
+- Dashboard fetching commerce orders server-side.
+- Upload-serving route intended to support files created after a production build.
+
+Important files:
+
+```text
+apps/artisan/lib/catalog.ts
+apps/artisan/lib/workflow.ts
+apps/artisan/lib/uploads.ts
+apps/artisan/prisma/schema.prisma
+apps/artisan/lib/backend.test.ts
+```
+
+### Artisan Frontend
+
+The frontend agent was interrupted, but substantial files exist:
+
+```text
+apps/artisan/components/studio-shell.tsx
+apps/artisan/components/dashboard.tsx
+apps/artisan/components/create-catalog.tsx
+apps/artisan/components/catalog-wizard.tsx
+apps/artisan/components/image-upload.tsx
+apps/artisan/components/voice-recorder.tsx
+apps/artisan/components/catalog-review.tsx
+apps/artisan/components/client-api.ts
+apps/artisan/components/ui.tsx
+```
+
+Pages exist for the dashboard, catalogs, new catalog, individual catalog wizard, orders, and guide.
+
+Source includes image selection/drop/camera input, microphone recording, audio-upload fallback, playback, Hindi prompts, catalog generation, pricing, stock entry, bilingual editing, publishing, and progress recovery.
+
+**Critical missing file:** `apps/artisan/app/globals.css`
+
+The root layout imports it. Completing this stylesheet is a concrete build blocker, not merely optional visual polish.
+
+## 4. What Was Verified
+
+| Check | Result |
+|---|---|
+| Workspace and source inspection | Completed |
+| Commerce dependency-free static tests | **4 passed** |
+| Dependency installation | **Failed: `ECONNRESET`** |
+| Prisma generation/database setup | Not completed |
+| Database seeding | Not run |
+| Full TypeScript checks | Not completed |
+| Next.js builds | Not completed |
+| Commerce runtime integration tests | Not run |
+| Artisan backend test suite | Not run |
+| Connected publish/purchase flow | Not tested |
+| Desktop/mobile browser behavior | Not tested |
+| Microphone/camera behavior | Not tested |
+| Production upload serving | Not tested |
+
+The static tests check structure and selected source patterns. They do **not** establish that either application works.
+
+## 5. Immediate Blockers
+
+1. **Finish Artisan styling.** Create the missing `globals.css` against the existing components and class names.
+2. **Complete dependency installation.** The first `npm install` failed with a network reset.
+3. **Generate Prisma clients and initialize databases.**
+4. **Fix the root test script.** It currently references nonexistent `tests/integration.mjs`.
+5. **Run real typechecks and builds.** Expect integration or compilation issues until these have passed.
+6. **Check Artisan dependency declarations.** Artisan imports `server-only` but does not explicitly declare it; Commerce does. Avoid relying accidentally on workspace hoisting.
+
+## 6. Artisan API Handoff
+
+Inspect the current handlers before modifying frontend requests.
+
+| Endpoint | Request |
+|---|---|
+| `POST /api/catalogs` | JSON `{}`; alternatively multipart with three `images` entries |
+| `GET /api/catalogs` | Returns `{ catalogs }` |
+| `GET /api/catalogs/:id` | Returns `{ catalog }` |
+| `POST /api/catalogs/:id/images` | Multipart: exactly three entries named `images` |
+| `POST /api/catalogs/:id/process-images` | `{ images: [three saved raw paths] }` |
+| `POST /api/catalogs/:id/transcribe` | Multipart: `audio1`, `audio2`, `audio3` |
+| `POST /api/catalogs/:id/generate` | `{ englishTranslations, processedImages, category }` |
+| `POST /api/catalogs/:id/price` | `{ materialCost, category, description, keywords }` |
+| `PATCH /api/catalogs/:id` | Supported editable catalog fields |
+| `POST /api/catalogs/:id/publish` | JSON `{}` |
+| `GET /api/dashboard` | Returns `{ catalogs, orders, commerceAvailable, error? }` |
+
+Important behavior:
+
+- Successful mutations return `{ catalog, ...stepResult }`.
+- DTO arrays/maps are parsed fields such as `rawImages` and `specifics`, not database `*Json` fields.
+- Generation requires the exact saved translations and processed image paths.
+- Pricing requires currently saved category, description, and keywords.
+- Replacing images resets downstream work and stock.
+- Retranscription resets generated content and pricing.
+- Regeneration resets pricing.
+- `READY` does not necessarily mean pricing and all publish prerequisites are complete.
+- Publish failures preserve editable content.
+- Demo transcripts are placeholders, not actual interpretations of recorded speech.
+
+## 7. Integration Details
+
+Default configuration:
+
+```env
+DEMO_API_KEY=local-demo-key
+COMMERCE_APP_URL=http://localhost:3000
+ARTISAN_APP_URL=http://localhost:4000
+DEMO_SELLER_ID=seller-demo
+DEMO_SELLER_EMAIL=demo@sahaj-market.test
+DEMO_SELLER_PASSWORD=demo123
+```
+
+Defaults are implemented server-side; `.env` files are not required for standard localhost operation.
+
+- Never expose the API key through browser code or `NEXT_PUBLIC_` variables.
+- Keep the integration seller as `seller-demo`.
+- Publish/update upsert by `artisanCatalogId`.
+- Successful publish returns `{ listingId, productUrl, created }`.
+- Commerce accepts three absolute image URLs matching the configured Artisan origin.
+- Commerce displays Studio-hosted images directly. Both apps must remain running.
+- Product pages use slugs; checkout API requests use product IDs.
+- Preserve the checkout response’s `confirmationUrl`, including its receipt token.
+
+## 8. Known Risks To Address
+
+### Inventory On Republish
+
+Studio stock does not automatically decrease when a buyer purchases through Commerce. Republishing applies Studio’s absolute stock and can restore sold units unintentionally.
+
+Preserve the specified publish contract, but make the behavior explicit and test it. Avoid introducing an unrequested inventory synchronization system without a deliberate design decision.
+
+### Interrupted Processing
+
+A crash after a catalog enters `PROCESSING` can leave it locked indefinitely. Review safe recovery for stale processing operations.
+
+### Publication Display
+
+Editing a published catalog changes its local status to `READY`, while the commerce listing remains live. Dashboard counts based only on `PUBLISHED` can therefore be misleading.
+
+### Wizard Resume
+
+Without matching browser-local progress, a priced catalog can resume directly at review and skip explicit stock confirmation. Ensure the stock step remains clear and intentional.
+
+### Demo Security Boundaries
+
+Studio has no authentication and exposes order information through its dashboard API. This is a controlled local prototype, not a public deployment. Do not expand the scope into production auth; clearly document the limitation.
+
+## 9. Recommended Execution Order
+
+### Step 1: Read And Preserve
+
+Read the specification, shared contracts, both backend implementations, and existing Artisan components. Complete the current code rather than replacing it wholesale.
+
+### Step 2: Restore Tooling
+
+Run from `D:\sih-demo`:
+
+```powershell
+npm config get registry
+npm ping
+npm install
+```
+
+Use `npm install`, not `npm ci`, until a lockfile exists. Do not disable TLS verification to work around the network error.
+
+### Step 3: Complete The Frontend
+
+- Implement Artisan `globals.css`.
+- Verify mobile and desktop navigation.
+- Use large controls, clear step progression, warm neutrals, and readable Hindi text.
+- Keep demo-stub notices visible.
+- Check loading, error, empty, retry, and success states.
+- Ensure recordings stop and microphone tracks are released on cancellation/navigation.
+
+### Step 4: Initialize Data
+
+```powershell
+npm run db:setup
+npm run seed
+```
+
+Run seeding twice and verify there are no duplicate rows or unwanted stock resets.
+
+### Step 5: Typecheck And Build
+
+```powershell
+npm run typecheck -w @sahaj/commerce -- --incremental false
+node node_modules/typescript/bin/tsc --project apps/artisan/tsconfig.json --noEmit --incremental false
+node --test apps/commerce/tests/static.test.mjs
+node --import tsx --test apps/artisan/lib/backend.test.ts
+npm run build
+```
+
+Fix failures rather than suppressing TypeScript checks.
+
+### Step 6: Run Runtime Tests
+
+Start both apps:
+
+```powershell
+npm run dev
+```
+
+In another terminal:
+
+```powershell
+npm run test -w @sahaj/commerce
+```
+
+The commerce integration suite modifies test records. Inspect its setup and cleanup before execution.
+
+Implement the missing connected-app test suite or correct the root `test` command to valid test targets.
+
+### Step 7: Prove The Full Demo
+
+1. Browse the seeded marketplace and verify filtering/sorting.
+2. Create a catalog with exactly three images.
+3. Process images and verify persisted files.
+4. Record or upload exactly three audio answers.
+5. Generate, price, set stock, and edit bilingual content.
+6. Publish and open the live listing.
+7. Republish and verify no duplicate listing or changed slug.
+8. Purchase and verify server-calculated total and stock reduction.
+9. Verify the order in Seller Dashboard and Artisan Studio.
+10. Change order status and verify it is reflected.
+11. Stop Commerce, attempt publishing, verify `FAILED`, restart, and retry.
+12. Test invalid uploads, insufficient stock, missing sessions, and invalid API keys.
+
+### Step 8: Verify Production Mode
+
+Stop development servers, then run:
+
+```powershell
+npm run build
+npm start
+```
+
+Upload new files **after the build** and verify product images and audio remain accessible. This is essential for local filesystem uploads.
+
+### Step 9: Finish Documentation
+
+Add root setup documentation covering commands, credentials, ports, stub behavior, demo walkthrough, known limitations, and troubleshooting.
+
+## 10. Completion Criteria
+
+Do not report the project as finished until:
+
+- Both apps build and start successfully.
+- Artisan styling is complete and responsive.
+- Databases initialize and seed safely.
+- The full catalog-to-purchase-to-orders flow passes.
+- Publishing retries preserve listing identity.
+- Invalid inputs and stock conflicts fail safely.
+- New uploads work in production mode.
+- Root test commands reference real tests.
+- Verification results and remaining limitations are documented.
+
+**Next agent’s first priority:** complete the missing Artisan stylesheet, recover dependency installation, and establish passing builds before claiming functional completion.

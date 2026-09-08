@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./artisan.db"
+}
+
+model Catalog {
+  id                      String        @id @default(cuid())
+  sellerId                String        @default("seller-demo")
+  status                  CatalogStatus @default(DRAFT)
+  processingStep          String?
+  rawImagesJson           String        @default("[]")
+  processedImagesJson     String        @default("[]")
+  audioPathsJson          String        @default("[]")
+  audioMimeType           String?
+  sourceLanguage          String?
+  regionalTranscriptsJson String        @default("[]")
+  englishTranslationsJson String        @default("[]")
+  title                   String?
+  hindiTitle              String?
+  category                String?
+  bulletsJson             String        @default("[]")
+  hindiBulletsJson         String        @default("[]")
+  description             String?
+  hindiDescription        String?
+  specificsJson           String        @default("{}")
+  keywordsJson            String        @default("[]")
+  materialCost            Float?
+  recommendedPrice        Float?
+  finalPrice              Float?
+  stock                   Int           @default(1)
+  commerceListingId       String?
+  productUrl              String?
+  errorMessage            String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  @@index([sellerId, createdAt])
+}
+
+enum CatalogStatus {
+  DRAFT
+  PROCESSING
+  READY
+  PUBLISHED
+  FAILED
+}

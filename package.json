@@ -1,0 +1,18 @@
+{
+  "name": "sahaj-demo",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -n commerce,artisan -c yellow,green \"npm run dev -w @sahaj/commerce\" \"npm run dev -w @sahaj/artisan\"",
+    "db:setup": "npm run db:setup -w @sahaj/commerce && npm run db:setup -w @sahaj/artisan",
+    "seed": "npm run seed -w @sahaj/commerce",
+    "build": "npm run build -w @sahaj/commerce && npm run build -w @sahaj/artisan",
+    "start": "concurrently -n commerce,artisan \"npm run start -w @sahaj/commerce\" \"npm run start -w @sahaj/artisan\"",
+    "test": "node --import tsx --test tests/integration.mjs"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
+  "devDependencies": {"concurrently": "^9.2.0", "tsx": "^4.20.0", "typescript": "^5.9.0", "@types/node": "^22.0.0", "@types/react": "^19.0.0", "@types/react-dom": "^19.0.0"}
+}

@@ -1,0 +1,1 @@
+export default function Loading() { return <div className="wrap loading-state" role="status"><span className="eyebrow">Gathering a few beautiful things...</span><div className="skeleton-grid">{[1, 2, 3, 4].map(i => <div className="skeleton" key={i} />)}</div></div>; }

@@ -1,0 +1,30 @@
+services:
+  sahaj-apps:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sahaj-platform
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - COMMERCE_APP_URL=http://localhost:3000
+      - ARTISAN_APP_URL=http://localhost:4000
+      - DEMO_API_KEY=local-demo-key
+      - DEMO_SELLER_ID=seller-demo
+      - DEMO_SELLER_EMAIL=demo@sahaj-market.test
+      - DEMO_SELLER_PASSWORD=demo123
+      - DEMO_SESSION_SECRET=sahaj-local-only-change-before-deployment-2026
+    volumes:
+      # Persist SQLite databases
+      - commerce-data:/app/apps/commerce/prisma
+      - artisan-data:/app/apps/artisan/prisma
+      # Persist user-uploaded media files
+      - uploads-data:/app/apps/artisan/public/uploads
+
+volumes:
+  commerce-data:
+  artisan-data:
+  uploads-data:

@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./commerce.db"
+}
+
+model Seller {
+  id        String    @id
+  name      String
+  email     String?
+  location  String    @default("India")
+  story     String    @default("")
+  products  Product[]
+  orders    Order[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id                   String   @id @default(cuid())
+  sellerId             String
+  artisanCatalogId     String?  @unique
+  title                String
+  hindiTitle           String?
+  slug                 String   @unique
+  category             String
+  description          String
+  hindiDescription     String?
+  bulletsJson          String   @default("[]")
+  hindiBulletsJson      String   @default("[]")
+  imagesJson           String   @default("[]")
+  specificsJson        String   @default("{}")
+  keywordsJson         String   @default("[]")
+  price                Float
+  stock                Int      @default(1)
+  isPublished          Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  seller               Seller   @relation(fields: [sellerId], references: [id])
+  orders               Order[]
+
+  @@index([sellerId])
+  @@index([category])
+  @@index([isPublished])
+  @@index([createdAt])
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  productId         String
+  sellerId          String
+  buyerName         String
+  buyerEmail        String
+  address           String
+  quantity          Int         @default(1)
+  total             Float
+  status            OrderStatus @default(PAID)
+  confirmationToken String      @unique
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  product           Product     @relation(fields: [productId], references: [id])
+  seller            Seller      @relation(fields: [sellerId], references: [id])
+
+  @@index([sellerId])
+  @@index([status])
+}
+
+enum OrderStatus {
+  PAID
+  DISPATCHED
+  DELIVERED
+}

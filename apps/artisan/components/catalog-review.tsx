@@ -45,7 +45,7 @@ export function CatalogReview({ catalog, busy, onSave, onPublish, onReplace, onR
   }
   const url = safeProductUrl(catalog.productUrl);
   return <form className="review-form" onSubmit={event => { event.preventDefault(); const parsed = values(); if (parsed && verified) void onPublish(parsed); }}>
-    <DemoNotice>This draft contains demo-generated text, not verified product facts. Check both languages and remove placeholders. Studio images are unchanged copies; the suggested price is a formula, not market research.</DemoNotice>
+    <DemoNotice>This draft contains demo-generated text, not verified product facts. Check both languages and remove placeholders. Studio images have clean white backgrounds; the suggested price is a formula, not market research.</DemoNotice>
     {catalog.commerceListingId && <div className="notice"><Store size={20} /><p>Editing here does not change your marketplace listing until you publish again. Publishing updates the same product, without creating a duplicate.{url && <> <a href={url} target="_blank" rel="noopener noreferrer" className="text-link">View current listing <ArrowUpRight size={15} /></a></>}</p></div>}
     <fieldset disabled={busy} className="review-fieldset">
       <section className="review-section"><div className="section-heading"><div><span className="eyebrow">01 / THE FIRST IMPRESSION</span><h2>Your photographs</h2></div><button type="button" className="button secondary small-button" onClick={onReplace}><ImagePlus size={17} /> Replace photos</button></div><ImageComparison catalog={catalog} /><p className="fine-print">Replacement resets all downstream work. You will be asked to confirm before uploading.</p></section>

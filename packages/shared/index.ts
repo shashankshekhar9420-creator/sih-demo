@@ -26,8 +26,42 @@ export const artisanOrderSchema = z.object({
 });
 export const artisanOrdersResponseSchema = z.object({orders: z.array(artisanOrderSchema)});
 export type ArtisanOrder = z.infer<typeof artisanOrderSchema>;
-export function parseStrings(value: string): string[] {return stringsSchema.parse(JSON.parse(value));}
-export function parseSpecifics(value: string): Record<string, string> {return specificsSchema.parse(JSON.parse(value));}
+export function parseStrings(value: string | unknown): string[] {
+  if (Array.isArray(value)) return value.map(item => (typeof item === 'string' ? item : String(item ?? '')));
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(item => (typeof item === 'string' ? item : String(item ?? '')));
+  } catch {
+    return [];
+  }
+}
+export function parseSpecifics(value: string | unknown): Record<string, string> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const result: Record<string, string> = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (typeof k === 'string' && v !== null && v !== undefined) {
+        result[k] = typeof v === 'string' ? v : String(v);
+      }
+    }
+    return result;
+  }
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const result: Record<string, string> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof k === 'string' && v !== null && v !== undefined) {
+        result[k] = typeof v === 'string' ? v : String(v);
+      }
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
 export function rupees(value: number): string {return new Intl.NumberFormat('en-IN', {style: 'currency', currency: 'INR', maximumFractionDigits: 2}).format(value);}
 
 export const questions = [

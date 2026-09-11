@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { ApiError, api, jsonBody } from './api';
 import { toCatalog } from './catalog';
 import { readUpload, uploadsFromRequest } from './uploads';
+import { createCatalog, deleteCatalog, getCatalog } from './workflow';
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
 
@@ -90,3 +91,14 @@ test('catalog DTO parses all JSON fields and serializes timestamps', () => {
   assert.ok(Object.keys(catalog).every(key => !key.endsWith('Json')));
   assert.deepEqual(JSON.parse(JSON.stringify(catalog)), catalog);
 });
+
+test('createCatalog and deleteCatalog correctly manages lifecycle and cleanup', async () => {
+  const catalog = await createCatalog();
+  assert.ok(catalog.id);
+  const found = await getCatalog(catalog.id);
+  assert.equal(found.id, catalog.id);
+  const del = await deleteCatalog(catalog.id);
+  assert.equal(del.success, true);
+  await assert.rejects(getCatalog(catalog.id), ApiError);
+});
+

@@ -84,6 +84,8 @@ test('commerce end-to-end contracts and safety', async t => {
     assert.match(setCookie, /HttpOnly/i); assert.match(setCookie, /SameSite=lax/i);
     cookie = setCookie.split(';')[0]; assert.ok(!cookie.includes('demo123'));
     assert.equal((await api('/api/seller/dashboard', { headers: { Cookie: cookie } })).response.status, 200);
+    const dashPage = await fetch(`${base}/seller/dashboard`, { headers: { Cookie: cookie }, redirect: 'manual' });
+    assert.equal(dashPage.status, 200);
   });
   await t.test('seller scoping, hidden listings and cross-origin protection', async () => {
     await db.product.create({ data: { id: foreignProductId, sellerId: 'seller-assam', title: 'Foreign test product', slug: foreignProductId, category: 'Other', description: 'Test', price: 1, stock: 1 } });

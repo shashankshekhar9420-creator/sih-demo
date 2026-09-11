@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start -p 4000",
     "db:setup": "prisma generate && prisma db push",
-    "test": "node --import tsx --test lib/backend.test.ts",
+    "test": "node --conditions react-server --import tsx --test lib/backend.test.ts lib/generate-processor.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@imgly/background-removal-node": "^1.4.5",
     "@prisma/client": "6.19.0",
     "@sahaj/shared": "*",
     "lucide-react": "^0.468.0",
@@ -18,6 +19,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.4",
     "zod": "^3.25.0"
   },
   "devDependencies": {

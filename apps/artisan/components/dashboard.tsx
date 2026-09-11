@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowRight, ArrowUpRight, BookOpen, Camera, Check, Clock3, Mic, Package, Plus, RefreshCw, Search, ShoppingBag, Store } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BookOpen, Camera, Check, Clock3, Mic, Package, Plus, RefreshCw, Search, ShoppingBag, Store, Trash2 } from 'lucide-react';
 import { rupees } from '@sahaj/shared';
-import { dashboardSchema, dateLabel, request, resumeStep, safeProductUrl, type DashboardData } from './client-api';
+import { dashboardSchema, dateLabel, deleteCatalogRequest, request, resumeStep, safeProductUrl, type DashboardData } from './client-api';
 import { CraftIllustration, EmptyState, ErrorNotice, LoadingPanel, StatusBadge } from './ui';
 
 const stepNames = ['Add photographs', 'Prepare images', 'Record your story', 'Choose a category', 'Set your price', 'Add stock', 'Review & publish'];
@@ -16,6 +16,23 @@ export function Dashboard({ view }: { view: 'studio' | 'catalogs' | 'orders' }) 
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(id: string, title?: string | null) {
+    if (deletingId) return;
+    const confirmed = window.confirm(`Are you sure you want to delete "${title || 'this catalog'}"? All photos, voice recordings, and drafts will be permanently deleted.`);
+    if (!confirmed) return;
+    setDeletingId(id);
+    try {
+      await deleteCatalogRequest(id);
+      setData(prev => prev ? { ...prev, catalogs: prev.catalogs.filter(c => c.id !== id) } : null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Could not delete catalog.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
@@ -49,7 +66,7 @@ export function Dashboard({ view }: { view: 'studio' | 'catalogs' | 'orders' }) 
         {catalogs.length ? <div className="catalog-grid">{(view === 'studio' ? catalogs.slice(0, 5) : catalogs).map(catalog => {
           const image = catalog.processedImages[0] ?? catalog.rawImages[0];
           const url = safeProductUrl(catalog.productUrl);
-          return <article className="catalog-card" key={catalog.id}><Link href={`/catalogs/${catalog.id}`} className="catalog-image" tabIndex={-1} aria-hidden="true">{image ? <img src={image} alt="" loading="lazy" /> : <div className="photo-placeholder"><Camera size={38} strokeWidth={1} /><span>A new story starts here</span></div>}<StatusBadge status={catalog.status} /></Link><div className="catalog-card-body"><span className="catalog-category">{catalog.category ?? 'YOUR NEXT CREATION'}</span><h3><Link href={`/catalogs/${catalog.id}`}>{catalog.title || 'Untitled handmade creation'}</Link></h3>{catalog.hindiTitle && <p className="hindi-title" lang="hi">{catalog.hindiTitle}</p>}<div className="catalog-details"><strong>{catalog.finalPrice !== null ? rupees(catalog.finalPrice) : 'Price not set'}</strong><span>{catalog.finalPrice !== null ? `${catalog.stock} in stock` : stepNames[resumeStep(catalog)]}</span></div><div className="catalog-card-footer"><Link href={`/catalogs/${catalog.id}`} className="text-link">{catalog.status === 'PUBLISHED' ? 'Edit catalog' : catalog.status === 'FAILED' ? 'Review & retry' : 'Continue catalog'} <ArrowRight size={15} /></Link>{catalog.status === 'PUBLISHED' && url ? <a href={url} target="_blank" rel="noopener noreferrer" className="icon-button" aria-label={`View ${catalog.title ?? 'product'} on marketplace`}><ArrowUpRight size={18} /></a> : <span className="save-date">{dateLabel(catalog.updatedAt)}</span>}</div></div></article>;
+          return <article className="catalog-card" key={catalog.id}><Link href={`/catalogs/${catalog.id}`} className="catalog-image" tabIndex={-1} aria-hidden="true">{image ? <img src={image} alt="" loading="lazy" /> : <div className="photo-placeholder"><Camera size={38} strokeWidth={1} /><span >A new story starts here</span></div>}<StatusBadge status={catalog.status} /></Link><div className="catalog-card-body"><span className="catalog-category">{catalog.category ?? 'YOUR NEXT CREATION'}</span><h3><Link href={`/catalogs/${catalog.id}`}>{catalog.title || 'Untitled handmade creation'}</Link></h3>{catalog.hindiTitle && <p className="hindi-title" lang="hi">{catalog.hindiTitle}</p>}<div className="catalog-details"><strong>{catalog.finalPrice !== null ? rupees(catalog.finalPrice) : 'Price not set'}</strong><span>{catalog.finalPrice !== null ? `${catalog.stock} in stock` : stepNames[resumeStep(catalog)]}</span></div><div className="catalog-card-footer"><Link href={`/catalogs/${catalog.id}`} className="text-link">{catalog.status === 'PUBLISHED' ? 'Edit catalog' : catalog.status === 'FAILED' ? 'Review & retry' : 'Continue catalog'} <ArrowRight size={15} /></Link><div className="catalog-card-actions">{catalog.status === 'PUBLISHED' && url ? <a href={url} target="_blank" rel="noopener noreferrer" className="icon-button" aria-label={`View ${catalog.title ?? 'product'} on marketplace`}><ArrowUpRight size={18} /></a> : <span className="save-date">{dateLabel(catalog.updatedAt)}</span>}<button type="button" className="icon-button delete-catalog-btn" disabled={deletingId === catalog.id || catalog.status === 'PROCESSING'} title="Delete catalog" aria-label={`Delete ${catalog.title || 'catalog'}`} onClick={e => { e.preventDefault(); e.stopPropagation(); void handleDelete(catalog.id, catalog.title); }}><Trash2 size={15} /></button></div></div></div></article>;
         })}{view === 'studio' && <Link href="/catalogs/new" className="new-catalog-tile"><span><Plus size={27} strokeWidth={1.4} /></span><h3>What are you making next?</h3><p>Give your next creation<br />a place in the world.</p><strong>Create a catalog <ArrowRight size={15} /></strong></Link>}</div> : <EmptyState title={data.catalogs.length ? 'No creations found' : 'Your first creation belongs here'} action={data.catalogs.length ? <button className="button secondary" onClick={() => { setSearch(''); setFilter('all'); }}>Clear filters</button> : <Link href="/catalogs/new" className="button primary"><Plus size={17} /> Create your first catalog</Link>}>{data.catalogs.length ? 'Try another name or show all your catalogs.' : 'Start with three photographs and the story only you can tell.'}</EmptyState>}
       </section>}
       {view !== 'catalogs' && <section className="orders-section"><div className="section-heading"><div><span className="eyebrow">FROM THE MARKETPLACE</span><h2>{view === 'studio' ? 'Recent orders' : 'Your orders'}</h2></div>{view === 'studio' ? <Link href="/orders" className="text-link">View all orders <ArrowUpRight size={17} /></Link> : <button disabled={loading} className="button secondary small-button" onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16} className={loading ? 'spin' : ''} /> Refresh orders</button>}</div>

@@ -1,6 +1,7 @@
 node_modules/
 .next/
 .env
+.env*.local
 *.db
 *.db-journal
 *.db-wal
@@ -11,3 +12,7 @@ apps/*/public/uploads/*
 !apps/*/public/uploads/.gitkeep
 test-results/
 playwright-report/
+__pycache__/
+*.py[cod]
+*$py.class
+

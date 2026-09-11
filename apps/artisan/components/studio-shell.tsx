@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowUpRight, BookOpen, LayoutDashboard, Leaf, Package, Plus, ShoppingBag } from 'lucide-react';
+import { ArrowUpRight, BarChart3, BookOpen, LayoutDashboard, Leaf, Package, Plus, ShoppingBag } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export function StudioShell({ children }: { children: ReactNode }) {
@@ -11,6 +11,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
     { href: '/', label: 'My studio', icon: LayoutDashboard, active: pathname === '/' },
     { href: '/catalogs', label: 'My catalogs', icon: BookOpen, active: pathname.startsWith('/catalogs') },
     { href: '/orders', label: 'Orders', icon: ShoppingBag, active: pathname === '/orders' },
+    { href: '/business', label: 'Business', icon: BarChart3, active: pathname.startsWith('/business') },
   ];
   return <div className="studio-shell">
     <a href="#main-content" className="skip-link">Skip to content</a>

@@ -8,7 +8,7 @@ import { ApiError } from './api';
 import { type Catalog, toCatalog } from './catalog';
 import { db } from './db';
 import { commerceRequest, integrationUrl } from './commerce';
-import { readUpload, saveUploads, type Upload } from './uploads';
+import { deleteUploads, readUpload, saveUploads, type Upload } from './uploads';
 
 const threeStrings = z.array(z.string().trim().min(1).max(2000)).length(3);
 export const emptySchema = z.object({}).strict();
@@ -48,6 +48,25 @@ export async function listCatalogs() {
 export async function createCatalog() {
   return toCatalog(await db.catalog.create({ data: {} }));
 }
+
+export async function deleteCatalog(id: string) {
+  const row = await db.catalog.findFirst({ where: { id, sellerId: 'seller-demo' } });
+  if (!row) throw new ApiError(404, 'Catalog not found.', 'NOT_FOUND');
+  if (row.status === 'PROCESSING') throw new ApiError(409, 'Cannot delete a catalog while it is processing.', 'CATALOG_BUSY');
+  if (row.commerceListingId) {
+    try {
+      await commerceRequest('/api/artisan/catalogs/delete', {
+        method: 'POST', body: JSON.stringify({ artisanCatalogId: id }),
+      });
+    } catch {
+      // Non-fatal if commerce is unavailable or already deleted
+    }
+  }
+  await deleteUploads(id);
+  await db.catalog.delete({ where: { id } });
+  return { success: true, id };
+}
+
 
 type MutationResult<T> = { data: Prisma.CatalogUpdateInput; result: T };
 
@@ -117,13 +136,21 @@ export function replaceImages(id: string, uploads: Upload[]) {
 export function processImages(id: string, input: z.infer<typeof processImagesSchema>) {
   return mutate(id, 'process-images', async catalog => {
     requireStep(catalog.rawImages.length === 3 && sameStrings(input.images, catalog.rawImages), 'Use the three current raw images for this catalog.');
-    const uploads = await Promise.all(input.images.map(async image => {
-      const file = await readUpload(image, id, 'raw');
-      return { ...file, mime: file.extension === 'png' ? 'image/png' : 'image/jpeg' };
-    }));
-    // Demo enhancement intentionally preserves the exact original bytes.
-    await new Promise(resolve => setTimeout(resolve, 200));
-    const processedImages = await saveUploads(id, 'processed', uploads);
+    const files = await Promise.all(input.images.map(async image => readUpload(image, id, 'raw')));
+
+    // BB1 real engine: sharp (CPU/Node) by default, GPU via Python+REMBG when
+    // IMAGE_PROCESSOR=python and scripts/image_processor.py is present.
+    // Failures fall back to sharp so the route never 502s on missing models.
+    const { enhanceImage } = await import('./image-processor');
+    const enhanced = await Promise.all(
+      files.map(async file => {
+        const outBytes = await enhanceImage({ bytes: file.bytes, extension: file.extension });
+        // SaveUploads expects {bytes, extension, mime}; normalise to jpg.
+        return { bytes: outBytes, extension: 'jpg' as const, mime: 'image/jpeg' as const };
+      }),
+    );
+
+    const processedImages = await saveUploads(id, 'processed', enhanced);
     return {
       data: { processedImagesJson: JSON.stringify(processedImages), ...clearAudio, status: 'DRAFT' },
       result: { processedImages, status: 'DRAFT' as const },
@@ -136,18 +163,27 @@ export function transcribe(id: string, uploads: Upload[]) {
     requireStep(catalog.processedImages.length === 3, 'Process three images before recording audio.');
     requireStep(uploads.length === 3, 'Provide one recording for each of the three questions.');
     const audioPaths = await saveUploads(id, 'audio', uploads);
-    const topics = ['product name and material', 'craft and appearance', 'use and story'];
-    const transcripts = topics.map((topic, index) => ({
-      questionNumber: index + 1,
-      sourceLanguage: 'hi',
-      transcript: `\u0921\u0947\u092e\u094b \u092a\u094d\u0932\u0947\u0938\u0939\u094b\u0932\u094d\u0921\u0930: \u092a\u094d\u0930\u0936\u094d\u0928 ${index + 1}\u0964 \u092f\u0939 \u0906\u092a\u0915\u0940 \u0930\u093f\u0915\u0949\u0930\u094d\u0921\u093f\u0902\u0917 \u0915\u093e \u0935\u093e\u0938\u094d\u0924\u0935\u093f\u0915 \u0932\u093f\u092a\u094d\u092f\u0902\u0924\u0930\u0923 \u0928\u0939\u0940\u0902 \u0939\u0948\u0964`,
-      englishTranslation: `Demo placeholder for question ${index + 1}: ${topic}. This is not a transcription of your recording. Replace with verified product facts.`,
-    }));
+
+    // BB2 real engine: Whisper small + IndicTrans2 via Python when
+    // TRANSCRIBE_PROCESSOR=python, otherwise deterministic placeholder.
+    // Both preserve the response contract; only the handler body changes.
+    const { transcribeWithModels } = await import('./transcribe-processor');
+    const buffers = uploads.map(u => u.bytes);
+    const exts = uploads.map(u => u.extension);
+    const transcripts = await transcribeWithModels(buffers, exts);
+
+    // sourceLanguage = majority vote across 3 audios (usually same speaker)
+    const counts = new Map<string, number>();
+    for (const t of transcripts) counts.set(t.sourceLanguage, (counts.get(t.sourceLanguage) ?? 0) + 1);
+    let sourceLanguage = 'hi';
+    let best = 0;
+    for (const [lang, n] of counts) if (n > best) { best = n; sourceLanguage = lang; }
+
     return {
       data: {
         ...clearContent, audioPathsJson: JSON.stringify(audioPaths),
         audioMimeType: uploads.every(upload => upload.mime === uploads[0].mime) ? uploads[0].mime : 'mixed',
-        sourceLanguage: 'hi', regionalTranscriptsJson: JSON.stringify(transcripts.map(item => item.transcript)),
+        sourceLanguage, regionalTranscriptsJson: JSON.stringify(transcripts.map(item => item.transcript)),
         englishTranslationsJson: JSON.stringify(transcripts.map(item => item.englishTranslation)), status: 'DRAFT',
       },
       result: { transcripts },
@@ -161,16 +197,19 @@ export function generate(id: string, input: z.infer<typeof generateSchema>) {
     requireStep(sameStrings(input.englishTranslations, catalog.englishTranslations), 'Use the current three English translations.');
     requireStep(catalog.processedImages.length === 3 && sameStrings(input.processedImages, catalog.processedImages), 'Use the current three processed images.');
     await Promise.all(input.processedImages.map(image => readUpload(image, id, 'processed')));
-    const generated = generatedSchema.parse({
-      title: `Demo ${input.category} catalog`,
-      hindiTitle: `\u0921\u0947\u092e\u094b \u0915\u0948\u091f\u0932\u0949\u0917: ${input.category}`,
-      description: `Demo catalog in ${input.category}. ${input.englishTranslations.join(' ')}`,
-      hindiDescription: `\u0921\u0947\u092e\u094b \u0915\u0948\u091f\u0932\u0949\u0917\u0964 ${catalog.regionalTranscripts.join(' ')}`,
-      bullets: input.englishTranslations,
-      hindiBullets: catalog.regionalTranscripts,
-      specifics: { 'Demo notice': 'Placeholder content only. Add verified material, size, color, and weight before publishing.' },
-      keywords: [input.category, 'demo catalog'],
-    });
+
+    // BB3 real engine: Ollama (local LLM, default mistral:7b-instruct-q4_K_M) via Python when
+    // GENERATE_PROCESSOR=python and scripts/generate_processor.py is present.
+    // Falls back to deterministic placeholder if Ollama is unavailable or the script is missing.
+    // Both paths preserve the route contract; only the handler body changes.
+    const { generateWithModel } = await import('./generate-processor');
+    const generated = generatedSchema.parse(
+      await generateWithModel({
+        englishTranslations: input.englishTranslations as [string, string, string],
+        category: input.category,
+      }),
+    );
+
     const { bullets, hindiBullets, specifics, keywords, ...textFields } = generated;
     return {
       data: {
@@ -182,6 +221,7 @@ export function generate(id: string, input: z.infer<typeof generateSchema>) {
     };
   });
 }
+
 
 export function price(id: string, input: z.infer<typeof priceSchema>) {
   return mutate(id, 'price', async catalog => {

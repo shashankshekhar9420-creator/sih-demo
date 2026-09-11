@@ -1,7 +1,7 @@
 FROM node:22-alpine AS base
 
-# Install OpenSSL & libc6-compat for Prisma on Alpine
-RUN apk add --no-cache openssl libc6-compat
+# Install OpenSSL & libc6-compat for Prisma + vips for sharp on Alpine
+RUN apk add --no-cache openssl libc6-compat vips-dev fftw-dev
 
 WORKDIR /app
 

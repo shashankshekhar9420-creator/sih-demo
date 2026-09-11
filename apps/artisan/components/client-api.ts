@@ -66,3 +66,10 @@ export function dateLabel(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Recently' : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+export const deleteResponseSchema = z.object({ success: z.boolean(), id: z.string() });
+
+export async function deleteCatalogRequest(id: string) {
+  return request(`/api/catalogs/${encodeURIComponent(id)}`, deleteResponseSchema, { method: 'DELETE' });
+}
+

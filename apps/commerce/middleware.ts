@@ -5,7 +5,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 export const runtime = 'nodejs';
 
 const sessionCookie = 'sahaj-seller';
-const secret = process.env.DEMO_SESSION_SECRET || 'local-demo-secret';
+const secret = process.env.DEMO_SESSION_SECRET || 'sahaj-local-only-change-before-deployment-2026';
 const demoSellerId = process.env.DEMO_SELLER_ID || 'seller-demo';
 
 function isValidSession(value?: string): boolean {

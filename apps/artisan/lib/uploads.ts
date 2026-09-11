@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ApiError } from './api';
 
@@ -91,3 +91,14 @@ export async function readUpload(url: string, owner?: string, kind?: 'raw' | 'pr
     throw new ApiError(404, 'Upload not found.', 'NOT_FOUND');
   }
 }
+
+export async function deleteUploads(id: string) {
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(id)) return;
+  try {
+    const dir = path.join(root, id);
+    await rm(dir, { recursive: true, force: true });
+  } catch (error) {
+    console.warn(`[uploads] Could not delete upload directory for catalog ${id}:`, error);
+  }
+}
+

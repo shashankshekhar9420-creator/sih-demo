@@ -2,11 +2,11 @@
 
 A voice-first cataloging studio for rural artisans paired with an e-commerce handicraft marketplace.
 
-> 💡 **Giving a live presentation or evaluation?** Follow the **[Demo Presentation Guide (DEMO_GUIDE.md)](file:///d:/sih-demo/DEMO_GUIDE.md)** for a 4-act script, demo credentials, sample files, and live GPU talking points.
+>  **Giving a live presentation or evaluation?** Follow the **[Demo Presentation Guide (DEMO_GUIDE.md)](file:///d:/sih-demo/DEMO_GUIDE.md)** for a 4-act script, demo credentials, sample files, and live GPU talking points.
 
 ---
 
-## ⚡ Quick Start: How to Run
+##  Quick Start: How to Run
 
 ### 1. Prerequisites
 - **Node.js**: v20 or higher
@@ -30,12 +30,12 @@ npm run dev
 ```
 
 Open your browser:
-- 🎨 **Artisan Studio**: [http://localhost:4000](http://localhost:4000)
-- 🛒 **Commerce Marketplace**: [http://localhost:3000](http://localhost:3000)
+- **Artisan Studio**: [http://localhost:4000](http://localhost:4000)
+- **Commerce Marketplace**: [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🔑 Demo Login & Credentials
+##  Demo Login & Credentials
 
 - **Seller Login**: [http://localhost:3000/seller/login](http://localhost:3000/seller/login)
   - **Email**: `demo@sahaj-market.test`
@@ -45,7 +45,7 @@ Open your browser:
 
 ---
 
-## 🧭 How to Test the Demo Flow
+##  How to Test the Demo Flow
 
 1. **Create a Catalog (Artisan Studio — `:4000`)**:
    - Go to [http://localhost:4000/catalogs/new](http://localhost:4000/catalogs/new).
@@ -63,7 +63,7 @@ Open your browser:
 
 ---
 
-## 🤖 AI Engines & Local GPU Acceleration (Optional)
+##  AI Engines & Local GPU Acceleration (Optional)
 
 All AI processing (background removal, speech transcription, catalog generation) includes automatic deterministic fallbacks so the app runs smoothly out-of-the-box without external dependencies.
 
@@ -83,7 +83,7 @@ All AI processing (background removal, speech transcription, catalog generation)
 
 ---
 
-## 🧪 Run Tests
+##  Run Tests
 
 ```bash
 # Shared contract tests

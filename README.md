@@ -2,7 +2,7 @@
 
 A voice-first cataloging studio for rural artisans paired with an e-commerce handicraft marketplace.
 
->  **Giving a live presentation or evaluation?** Follow the **[Demo Presentation Guide (DEMO_GUIDE.md)](file:///d:/sih-demo/DEMO_GUIDE.md)** for a 4-act script, demo credentials, sample files, and live GPU talking points.
+> > **Giving a live presentation or evaluation?** Follow the **[Demo Presentation Guide (DEMO_GUIDE.md)](./DEMO_GUIDE.md)**
 
 ---
 
